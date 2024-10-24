@@ -1,0 +1,45 @@
+# File: .gitlab-ci.yml
+
+stages:
+  - info
+
+collect-info:
+  stage: info
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache jq
+  script:
+    - |
+      jq -n \
+        --arg time "$(date -u '+%Y-%m-%d %H:%M:%S UTC')" \
+        --arg project "$CI_PROJECT_NAME" \
+        --arg namespace "$CI_PROJECT_NAMESPACE" \
+        --arg path "$CI_PROJECT_PATH" \
+        --arg branch "$CI_DEFAULT_BRANCH" \
+        --arg sha "$CI_COMMIT_SHA" \
+        --arg commit_branch "$CI_COMMIT_BRANCH" \
+        --arg runner_desc "$CI_RUNNER_DESCRIPTION" \
+        --arg runner_tags "$CI_RUNNER_TAGS" \
+        --arg runner_ver "$CI_RUNNER_VERSION" \
+        --arg platform "$(uname -a)" \
+        '{
+          timestamp: $time,
+          repository: {
+            project: $project,
+            namespace: $namespace,
+            path: $path,
+            default_branch: $branch,
+            commit_sha: $sha,
+            commit_branch: $commit_branch
+          },
+          runner: {
+            description: $runner_desc,
+            tags: $runner_tags,
+            version: $runner_ver,
+            platform: $platform
+          }
+        }' > build-info.json
+  artifacts:
+    paths:
+      - build-info.json
+    expire_in: 1 week
